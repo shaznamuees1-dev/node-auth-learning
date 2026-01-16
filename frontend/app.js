@@ -27,9 +27,9 @@ form.addEventListener("submit", async (e) => {
 async function loadDashboard() {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:3000/dashboard", {
+  const res = await fetch("http://localhost:3000/admin", {
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization:  "Bearer " + localStorage.getItem("token")
     }
   });
 
@@ -37,29 +37,36 @@ async function loadDashboard() {
   console.log("Dashboard:", data);
 };
 
+async function login(email, password) {
+  const res = await fetch("http://localhost:3000/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
 
-/* To test this code: Day31
-Test in browser console AGAIN
+  const data = await res.json();
+  localStorage.setItem("token", data.token);
+  console.log("Token saved for",email);
+}
 
-paste this (DevTools Console):
+async function getAdmin() {
+  const token = localStorage.getItem("token");
 
-fetch("http://localhost:3000/login", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email: "admin@test.com",
-    password: "1234"
-  })
-})
-.then(res => res.json())
-.then(data => console.log(data))
-.catch(err => console.error(err)); */
+  const res = await fetch("http://localhost:3000/admin", {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
 
-// Day32-Authentication Flow (JWT Basics + Protected Routes)
-/* Token Generation-Server gives a token after login
-Day32:
-✔ JWT creation
-✔ Token-based login
-✔ Middleware
-✔ Protected backend routes
-✔ Real frontend → backend auth flow */
+  if (!res.ok) {
+    const text = await res.text(); // handle non-JSON
+    console.error("Admin access failed:", text);
+    alert(text);
+    return;
+  }
+
+  const data = await res.json();
+  console.log(data);
+}
+
+ //Fetch + localStorage

@@ -2,55 +2,73 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 
-
 const app = express();
 
-//  CORS FIX (IMPORTANT)
-app.use(cors({
-  origin: "http://127.0.0.1:5500"
-}));
-
+app.use(cors({ origin: "http://127.0.0.1:5500" }));
 app.use(express.json());
 
-const SECRET_KEY = "day32_secret_key"; // learning purpose only
+const SECRET = "day33_secret";
 
-// TEMP user (Day 31 learning)
-const user = {
-  email: "admin@test.com",
-  password: "1234"
-};
+// Users with roles
+const users = [
+  { email: "admin@test.com", password: "1234", role: "admin" },
+  { email: "user@test.com", password: "1234", role: "user" }
+];
 
-// Login route → returns TOKEN
+// LOGIN
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  if (email === user.email && password === user.password) {
-    const token = jwt.sign({ email }, SECRET_KEY, { expiresIn: "1h" });
-    return res.json({ message: "Login successful", token });
-  } else {
+  const foundUser = users.find(
+    u => u.email === email && u.password === password
+  );
+
+  if (!foundUser) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
+
+  const token = jwt.sign(
+    { email: foundUser.email, role: foundUser.role },
+    SECRET,
+    { expiresIn: "1h" }
+  );
+
+  res.json({ token });
 });
 
-// 🔐 Middleware to protect routes
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+// Middleware – verify token
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.sendStatus(403);
 
-  if (!token) return res.sendStatus(401);
+  const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, SECRET_KEY, (err, user) => {
+  jwt.verify(token, SECRET, (err, decoded) => {
     if (err) return res.sendStatus(403);
-    req.user = user;
+    req.user = decoded;
     next();
   });
 }
 
-// PROTECTED route
-app.get("/dashboard", authenticateToken, (req, res) => {
-  res.json({ message: "Welcome to dashboard", user: req.user });
+// Middleware – admin only
+function adminOnly(req, res, next) {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Admins only" });
+  }
+  next();
+}
+
+// Routes
+app.get("/profile", verifyToken, (req, res) => {
+  res.json({ message: "Profile data", user: req.user });
+});
+
+app.get("/admin", verifyToken, adminOnly, (req, res) => {
+  res.json({ message: "Admin dashboard" });
 });
 
 app.listen(3000, () => {
-  console.log("Auth server running at http://localhost:3000");
+  console.log("Day 33 server running at http://localhost:3000");
 });
+
+//Express + JWT
