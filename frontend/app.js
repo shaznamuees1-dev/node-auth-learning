@@ -1,6 +1,9 @@
 const form = document.getElementById("loginForm");
 const message = document.getElementById("message");
 
+const API = "http://localhost:3000";
+
+// LOGIN FORM
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -15,58 +18,52 @@ form.addEventListener("submit", async (e) => {
 
   const data = await res.json();
 
-   if (data.token) {
+  if (data.token) {
     localStorage.setItem("token", data.token);
     message.innerText = "Login successful!";
-    loadDashboard();
+     
   } else {
     message.innerText = "Login failed";
   }
 });
 
+// DASHBOARD (any logged-in user)
 async function loadDashboard() {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:3000/admin", {
+  const res = await fetch(`${API}/dashboard`, {
     headers: {
-      Authorization:  "Bearer " + localStorage.getItem("token")
+      Authorization: "Bearer " + token
     }
   });
 
   const data = await res.json();
   console.log("Dashboard:", data);
-};
-
-async function login(email, password) {
-  const res = await fetch("http://localhost:3000/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  });
-
-  const data = await res.json();
-  localStorage.setItem("token", data.token);
-  console.log("Token saved for",email);
 }
 
-async function getAdmin() {
+// ADMIN (admin only – optional button later)
+async function loadAdmin() {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:3000/admin", {
+  const res = await fetch(`${API}/admin`, {
     headers: {
       Authorization: "Bearer " + token
     }
   });
 
   if (!res.ok) {
-    const text = await res.text(); // handle non-JSON
-    console.error("Admin access failed:", text);
+    const text = await res.text();
     alert(text);
     return;
   }
 
   const data = await res.json();
-  console.log(data);
+  console.log("Admin:", data);
 }
 
- //Fetch + localStorage
+// PUBLIC (no login)
+async function loadPublic() {
+  const res = await fetch(`${API}/public`);
+  const data = await res.json();
+  console.log("Public:", data);
+}
