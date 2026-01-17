@@ -1,41 +1,28 @@
 # Node Authentication Learning (Day 31–35)
 
-This repository contains backend authentication learning using Node.js and Express.
+This repository demonstrates backend authentication using Node.js and Express.
+It is part of my **90-day full-stack learning plan**.
 
-## Covered Topics
-- Day 31: Basic login authentication
-- Day 32: Password hashing with bcrypt
-- Day 33: JWT authentication
-- Day 34: Protected routes & middleware
-- Day 35: Role-based access control
+---
 
-## Tech Stack
+## 📚 Covered Topics
+
+- **Day 31**: Basic login authentication (email & password)
+- **Day 32**: Password hashing with bcrypt
+- **Day 33**: JWT authentication
+- **Day 34**: Protected routes & middleware
+- **Day 35**: Role-based access control & authentication flow recap
+
+---
+
+## 🛠 Tech Stack
+
 - Node.js
 - Express
-- CORS
+- JSON Web Tokens (JWT)
 - bcrypt
-- JWT
-
-This project is part of my 90-day full-stack learning plan.
-
-//Day 31-	Login basics (email + password)
-//Day 32-Express + JWT
-//Day33-Role-based authorization
-
-//Day 34 = Protected Routes + Middleware Refinement
-      //How real apps protect routes
-      //How to reuse middleware properly
-      //Difference between public, private, and admin-only routes
-      //Cleaner backend structure (without over-engineering)
-
-//DAY 35 – Authentication Flow Wrap-up & Real-World Readiness      
-      //Authentication fundamentals (Login → Token → Protected routes)
-
-
-  # Node Authentication Basics (Day 31–35)
-
-This project demonstrates a complete authentication flow using
-Node.js, Express, JWT, and role-based authorization.
+- CORS
+- Vanilla JavaScript (frontend)
 
 ---
 
@@ -45,33 +32,34 @@ Node.js, Express, JWT, and role-based authorization.
 - User submits email and password
 - Frontend sends `POST /login`
 - Backend validates credentials
-- Backend generates and returns a JWT
+- Backend generates a JWT
 - Frontend stores token in `localStorage`
 
 ---
 
 ### 2️⃣ Access Protected Routes
-- Frontend sends requests with header:Authorization: Bearer <token>
-- `verifyToken` middleware runs:
-- Validates JWT
-- Decodes user data
-- Attaches user to `req.user`
-- Protected route executes
+Protected routes require the token in the request header:  
+`Authorization: Bearer <token>`
+Flow:
+- `verifyToken` middleware validates JWT
+- Decodes user info
+- Attaches data to `req.user`
+- Route executes
 
 ---
 
 ### 3️⃣ Role-Based Access (Admin)
 - `verifyToken` runs first
-- `adminOnly` middleware checks role
+- `adminOnly` middleware checks user role
 - Non-admin users receive `403 Forbidden`
 - Admin users are allowed access
 
 ---
 
-## 🧩 Route Types
+## 🧩 Route Access Summary
 
 | Route | Access |
-|---|---|
+|------|-------|
 | `/login` | Public |
 | `/public` | Public |
 | `/dashboard` | Logged-in users |
@@ -79,14 +67,9 @@ Node.js, Express, JWT, and role-based authorization.
 
 ---
 
-## 🛠 Tech Stack
-- Node.js
-- Express
-- JSON Web Tokens (JWT)
-- CORS
-- Vanilla JS (frontend)
+## ✅ Learning Outcome
 
----
+This project mirrors real-world authentication used in production applications,
+including token-based security and role-based authorization.
 
-## 📌 Learning Outcome
-This mirrors real-world authentication used in production applications.
+
