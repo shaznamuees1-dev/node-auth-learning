@@ -85,12 +85,3 @@ app.listen(3000, () => {
   console.log("Day 33 server running at http://localhost:3000");
 });
 
-
-//Express + JWT
-//Day33-Role-based authorization
-
-//Day 34 = Protected Routes + Middleware Refinement
-      //How real apps protect routes
-      //How to reuse middleware properly
-      //Difference between public, private, and admin-only routes
-      //Cleaner backend structure (without over-engineering)
