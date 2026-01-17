@@ -177,3 +177,25 @@ Proper HTTP status codes are used (401, 403)
 ✔ Middleware-based route protection
 ✔ Role-based authorization
 ✔ Production-style authentication flow
+-----
+```
+# 🗄️ Database Fundamentals – MongoDB (Day 36)
+
+
+### Why Databases
+- In-memory arrays reset on server restart
+- Databases persist data
+- Required for real-world apps
+
+### MongoDB Concepts
+- Database → Collection → Document → Field
+- JSON-based structure
+- Flexible schema
+
+### SQL vs NoSQL
+- MongoDB chosen for Node.js compatibility
+
+### Setup
+- MongoDB Atlas account created
+- Free cluster (M0)
+- Connection planned for Day 37
