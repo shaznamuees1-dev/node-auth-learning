@@ -72,4 +72,108 @@ Flow:
 This project mirrors real-world authentication used in production applications,
 including token-based security and role-based authorization.
 
+## 🧪 Testing the Authentication Flow
 
+Follow these steps to test all authentication scenarios.
+
+---
+
+### 1️⃣ Start the Backend Server
+
+```bash
+cd backend
+node index.js
+
+
+Server should run at:
+http://localhost:3000
+
+2️⃣ Open the Frontend
+
+Open frontend/index.html using Live Server or directly in the browser.
+
+✅ Test Cases
+1.🔓 Public Route (No Login Required)
+
+     Action (Browser Console):
+
+          loadPublic();
+
+
+      Expected Result:
+
+    {
+   "message": "Public content – no login required"
+   }
+
+2.👤 User Login (Non-Admin)
+   Credentials
+    Email: user@test.com
+    Password: 1234
+
+    Expected
+
+        ✅ Login success message
+
+        ✅ Token stored in localStorage
+
+        ✅ Access to /dashboard
+
+        ❌ Access to /admin → 403 Forbidden
+
+Test
+   loadDashboard(); // ✅ works
+   loadAdmin();     // ❌ 403 Forbidden
+
+3.👑 Admin Login
+   Credentials
+    Email: admin@test.com
+    Password: 1234  
+
+   Expected
+
+    ✅ Login success message
+
+    ✅ Token stored in localStorage
+
+    ✅ Access to /dashboard
+
+    ✅ Access to /admin
+
+Test
+   loadDashboard(); // ✅ works
+   loadAdmin();     // ✅ works
+    
+###  🔁 Switching Users (Important)
+
+Before testing a different role, clear the old token:
+
+     localStorage.clear();
+Then log in again with new credentials.
+
+4.🚫 Invalid Login Test
+   Credentials
+    Email: wrong@test.com
+    Password: 1234
+
+
+  Expected Result
+
+    {
+    "message": "Invalid credentials"
+    }   
+
+🔐 Security Notes
+
+Protected routes require a valid JWT
+
+Role-based middleware blocks unauthorized access
+
+Proper HTTP status codes are used (401, 403)
+
+✅ Learning Outcome
+
+✔ Token-based authentication
+✔ Middleware-based route protection
+✔ Role-based authorization
+✔ Production-style authentication flow
