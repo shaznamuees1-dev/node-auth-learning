@@ -199,3 +199,19 @@ Proper HTTP status codes are used (401, 403)
 - MongoDB Atlas account created
 - Free cluster (M0)
 - Connection planned for Day 37
+
+## 📘 Day 36 – MongoDB Basics & Atlas Setup
+
+- Learned why databases are required for persistence
+- Understood MongoDB concepts (Database, Collection, Document)
+- Compared SQL vs NoSQL
+- Created MongoDB Atlas account
+- Created free M0 cluster
+- Learned Atlas structure (Organization → Project → Cluster)
+
+### 📘 Day 37 – MongoDB Integration
+- Installed and configured Mongoose
+- Connected MongoDB Atlas to Node.js using Mongoose
+- Environment variables handled with dotenv
+- Created User schema and model
+- Backend now uses persistent storage instead of in-memory arrays(- Verified successful database connection)

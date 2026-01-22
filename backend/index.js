@@ -1,3 +1,9 @@
+
+require("dotenv").config();
+const mongoose = require("mongoose");
+ 
+
+
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -80,6 +86,14 @@ app.get("/dashboard", verifyToken, (req, res) => {
     user: req.user
   });
 });
+
+// Connect to MongoDB
+ 
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ MongoDB error", err));
+
 
 app.listen(3000, () => {
   console.log("Day 33 server running at http://localhost:3000");
