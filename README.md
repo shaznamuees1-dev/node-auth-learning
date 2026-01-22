@@ -215,3 +215,60 @@ Proper HTTP status codes are used (401, 403)
 - Environment variables handled with dotenv
 - Created User schema and model
 - Backend now uses persistent storage instead of in-memory arrays(- Verified successful database connection)
+
+## 📘 Day 38 – Project Structure & Auth Refactor
+
+Day 38 focuses on improving backend structure and making the authentication
+system closer to real-world production standards.
+
+---
+
+### ✅ What Was Done
+
+- Refactored authentication logic into route files
+- Introduced `/routes` and `/models` folders
+- Centralized MongoDB connection logic
+- Ensured server starts only after database connection
+- Improved separation of concerns
+- Used environment variables for secrets and configuration
+
+---
+
+### 📂 Backend Structure
+backend/
+├─ models/
+│ └─ User.js
+├─ routes/
+│ └─ auth.js
+├─ index.js
+├─ .env (not committed)
+├─ package.json
+
+
+---
+
+### 🔐 Authentication Flow (Updated)
+
+- Login handled via `/auth/login`
+- JWT issued on successful login
+- Token verified via middleware
+- Role-based access enforced for admin routes
+- MongoDB used as persistent storage
+
+---
+
+### 🧠 Key Learning
+
+- Clean project structure improves maintainability
+- Database connection should block server startup if it fails
+- Route separation mirrors real production backends
+- Environment variables are mandatory for security
+- Authentication logic should never be mixed with UI logic
+
+---
+
+### ✅ Status
+
+Day 38 completed successfully with a clean, scalable backend architecture.
+
+

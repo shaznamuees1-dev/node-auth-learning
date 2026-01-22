@@ -1,48 +1,26 @@
-
+// Load env variables
 require("dotenv").config();
-const mongoose = require("mongoose");
- 
 
-
+// Core imports
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+
+// App & models
+const User = require("./models/User");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 
+// Middleware
 app.use(cors({ origin: "http://127.0.0.1:5500" }));
 app.use(express.json());
 
-const SECRET = "day33_secret";
+const SECRET = process.env.JWT_SECRET;
 
-// Users with roles
-const users = [
-  { email: "admin@test.com", password: "1234", role: "admin" },
-  { email: "user@test.com", password: "1234", role: "user" }
-];
-
-// LOGIN
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-
-  const foundUser = users.find(
-    u => u.email === email && u.password === password
-  );
-
-  if (!foundUser) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  const token = jwt.sign(
-    { email: foundUser.email, role: foundUser.role },
-    SECRET,
-    { expiresIn: "1h" }
-  );
-
-  res.json({ token });
-});
-
-// Middleware – verify token
+// ---------- AUTH MIDDLEWARE ----------
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.sendStatus(403);
@@ -56,7 +34,6 @@ function verifyToken(req, res, next) {
   });
 }
 
-// Middleware – admin only
 function adminOnly(req, res, next) {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admins only" });
@@ -64,22 +41,13 @@ function adminOnly(req, res, next) {
   next();
 }
 
-// Routes
-app.get("/profile", verifyToken, (req, res) => {
-  res.json({ message: "Profile data", user: req.user });
-});
+// ---------- ROUTES ----------
+app.use("/auth", authRoutes);
 
-app.get("/admin", verifyToken, adminOnly, (req, res) => {
-  res.json({ message: "Admin dashboard" });
-});
-
-// Public route
 app.get("/public", (req, res) => {
   res.json({ message: "Public content – no login required" });
 });
 
-
-// User dashboard (any logged-in user)
 app.get("/dashboard", verifyToken, (req, res) => {
   res.json({
     message: "User dashboard",
@@ -87,15 +55,41 @@ app.get("/dashboard", verifyToken, (req, res) => {
   });
 });
 
-// Connect to MongoDB
- 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error("❌ MongoDB error", err));
-
-
-app.listen(3000, () => {
-  console.log("Day 33 server running at http://localhost:3000");
+app.get("/admin", verifyToken, adminOnly, (req, res) => {
+  res.json({ message: "Admin dashboard" });
 });
 
+// ---------- DATABASE ----------
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("✅ MongoDB connected");
+
+    await createTestUser();
+
+    app.listen(process.env.PORT || 3000, () => {
+      console.log("🚀 Server running at http://localhost:3000");
+    });
+  } catch (err) {
+    console.error("❌ MongoDB error", err);
+  }
+}
+
+// ---------- TEST USER ----------
+async function createTestUser() {
+  const existing = await User.findOne({ email: "admin@test.com" });
+  if (existing) return;
+
+  const hashedPassword = await bcrypt.hash("1234", 10);
+
+  await User.create({
+    email: "admin@test.com",
+    password: hashedPassword,
+    role: "admin"
+  });
+
+  console.log("✅ Test admin user created");
+}
+
+// Start everything
+startServer();
