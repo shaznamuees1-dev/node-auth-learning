@@ -311,4 +311,40 @@ POST /auth/register
   "password": "1234"
 }
 
+Response:
 
+{ "message": "User registered successfully" }
+
+❌ Duplicate Registration
+
+Status: 409 Conflict
+
+{ "message": "User already exists" }
+
+✅ Login Registered User
+POST /auth/login
+{
+  "email": "newuser@test.com",
+  "password": "1234"
+}
+Response:
+
+{ "token": "<JWT_TOKEN>" }
+🔒 Protected Route Access
+Valid token required
+
+Role-based restrictions enforced
+
+Non-admin users receive 403 Forbidden
+
+```
+### Learning Outcome
+MongoDB-backed authentication
+
+Secure password storage
+
+Real-world registration flow
+
+Proper HTTP status usage
+
+JWT-based session handling
