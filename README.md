@@ -383,11 +383,19 @@ JWT-based session handling
 - Admin-only routes enforced
 - MongoDB used instead of in-memory data
 
-🧪 TEST 1 — Missing Fields (Validation)
+ ## 🧪 Testing the Authentication Flow
 
-📍 Where: Browser Console
-📍 Why: Test backend validation
+Use the **Browser DevTools Console** (or Postman) to run the following tests.
+These confirm validation, authentication, authorization, and role-based access.
 
+---
+
+### 🧪 TEST 1 — Missing Fields (Validation)
+
+📍 **Where**: Browser Console  
+📍 **Why**: Test backend validation
+
+```js
 fetch("http://localhost:3000/auth/login", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
@@ -396,8 +404,7 @@ fetch("http://localhost:3000/auth/login", {
 .then(res => res.json())
 .then(data => console.log(data));
 
-
-✅ Expected:
+✅ Expected
 
 {
   "success": false,
@@ -405,7 +412,7 @@ fetch("http://localhost:3000/auth/login", {
 }
 
 
-✔ Confirms: validation middleware works
+✔ Confirms: request validation works
 
 🧪 TEST 2 — Wrong Password
 fetch("http://localhost:3000/auth/login", {
@@ -420,7 +427,7 @@ fetch("http://localhost:3000/auth/login", {
 .then(data => console.log(data));
 
 
-✅ Expected:
+✅ Expected
 
 {
   "success": false,
@@ -428,7 +435,7 @@ fetch("http://localhost:3000/auth/login", {
 }
 
 
-✔ Confirms: password hashing + compare works
+✔ Confirms: password hashing & comparison works
 
 🧪 TEST 3 — Protected Route WITHOUT Token
 fetch("http://localhost:3000/dashboard")
@@ -436,7 +443,7 @@ fetch("http://localhost:3000/dashboard")
 .then(data => console.log(data));
 
 
-✅ Expected:
+✅ Expected
 
 Forbidden
 
@@ -459,11 +466,11 @@ fetch("http://localhost:3000/auth/login", {
 });
 
 
-✅ Expected:
+✅ Expected
 
 Token printed in console
 
-Token saved in localStorage
+Token stored in localStorage
 
 ✔ Confirms: login + JWT generation works
 
@@ -477,20 +484,20 @@ fetch("http://localhost:3000/dashboard", {
 .then(data => console.log(data));
 
 
-✅ Expected:
+✅ Expected
 
 {
   "message": "User dashboard",
   "user": {
     "email": "admin@test.com",
     "role": "admin",
-    "iat": ...,
-    "exp": ...
+    "iat": "...",
+    "exp": "..."
   }
 }
 
 
-✔ Confirms: token decoding + middleware works
+✔ Confirms: token decoding & middleware execution
 
 🧪 TEST 6 — Admin Route (Role Check)
 fetch("http://localhost:3000/admin", {
@@ -502,7 +509,7 @@ fetch("http://localhost:3000/admin", {
 .then(data => console.log(data));
 
 
-✅ Expected:
+✅ Expected
 
 {
   "message": "Admin dashboard"
@@ -524,25 +531,26 @@ fetch("http://localhost:3000/auth/register", {
 .then(data => console.log(data));
 
 
-✅ Expected:
+✅ Expected
 
 { "message": "User registered successfully" }
 
+
+✔ Confirms: user registration works
+
 🧪 TEST 8 — Duplicate Registration
 
-Run the same command again 👆
+Run TEST 7 again with the same email.
 
-✅ Expected:
+✅ Expected
 
 { "message": "User already exists" }
 
 
-✔ Confirms: unique email constraint works
+✔ Confirms: unique email constraint enforced
 
 🧪 TEST 9 — Non-Admin Access to Admin Route
-
 1️⃣ Login as normal user
-
 fetch("http://localhost:3000/auth/login", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
@@ -556,9 +564,7 @@ fetch("http://localhost:3000/auth/login", {
   localStorage.setItem("token", data.token);
 });
 
-
 2️⃣ Try admin route
-
 fetch("http://localhost:3000/admin", {
   headers: {
     Authorization: "Bearer " + localStorage.getItem("token")
@@ -568,18 +574,22 @@ fetch("http://localhost:3000/admin", {
 .then(data => console.log(data));
 
 
-✅ Expected:
+✅ Expected
 
 Admins only
 
 
-✔ Confirms: role-based restriction works
+✔ Confirms: role-based access restriction works
+
+🔁 Important Testing Note
+
+MongoDB persists data across server restarts.
+If a user already exists, registration correctly returns 409 Conflict.
+Use a new email or delete the user from MongoDB Atlas to re-test registration.
 
 ### Outcome
 This setup mirrors **real-world production authentication systems**
 used in modern web applications.
 
-Note: MongoDB persists data across server restarts. 
-If a user already exists, registration correctly returns 409 Conflict.
-Use a new email to test fresh registrations.
+ 
 
