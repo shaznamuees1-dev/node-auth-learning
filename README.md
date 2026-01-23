@@ -271,4 +271,44 @@ backend/
 
 Day 38 completed successfully with a clean, scalable backend architecture.
 
+---
+
+## 📘 Day 39 – User Registration & MongoDB Persistence
+
+### What Was Implemented
+- User registration endpoint (`POST /auth/register`)
+- Password hashing using bcrypt
+- MongoDB persistence via Mongoose
+- Duplicate user prevention
+- Login for registered users with JWT issuance
+
+---
+
+### Registration Flow
+1. Client sends email & password to `/auth/register`
+2. Backend checks if user already exists
+3. Password is hashed using bcrypt
+4. User is stored in MongoDB
+5. Success or conflict response returned
+
+---
+
+### Login Flow
+1. Client sends credentials to `/auth/login`
+2. Backend verifies user from MongoDB
+3. Password hash is compared
+4. JWT token is issued on success
+
+---
+
+### Tested Scenarios
+
+#### ✅ Register New User
+```json
+POST /auth/register
+{
+  "email": "newuser@test.com",
+  "password": "1234"
+}
+
 

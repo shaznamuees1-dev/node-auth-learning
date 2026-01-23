@@ -5,7 +5,41 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// LOGIN
+/* ---------------- REGISTER ---------------- */
+router.post("/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Basic validation
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    await User.create({
+      email,
+      password: hashedPassword,
+      role: "user"
+    });
+
+    res.status(201).json({ message: "User registered successfully" });
+
+  } catch (error) {
+    console.error("Register error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ---------------- LOGIN ---------------- */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
