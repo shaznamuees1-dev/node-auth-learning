@@ -10,7 +10,7 @@ form.addEventListener("submit", async (e) => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch("http://localhost:3000/login", {
+  const res = await fetch(`${API}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password })
@@ -21,13 +21,12 @@ form.addEventListener("submit", async (e) => {
   if (data.token) {
     localStorage.setItem("token", data.token);
     message.innerText = "Login successful!";
-     
   } else {
     message.innerText = "Login failed";
   }
 });
 
-// DASHBOARD (any logged-in user)
+// DASHBOARD
 async function loadDashboard() {
   const token = localStorage.getItem("token");
 
@@ -41,7 +40,7 @@ async function loadDashboard() {
   console.log("Dashboard:", data);
 }
 
-// ADMIN (admin only – optional button later)
+// ADMIN
 async function loadAdmin() {
   const token = localStorage.getItem("token");
 
@@ -53,17 +52,17 @@ async function loadAdmin() {
 
   if (!res.ok) {
     const text = await res.text();
-    alert(text);
-    return;
+    throw new Error(text);
   }
 
   const data = await res.json();
   console.log("Admin:", data);
 }
 
-// PUBLIC (no login)
+// PUBLIC
 async function loadPublic() {
   const res = await fetch(`${API}/public`);
   const data = await res.json();
   console.log("Public:", data);
 }
+

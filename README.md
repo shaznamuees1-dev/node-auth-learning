@@ -348,3 +348,238 @@ Real-world registration flow
 Proper HTTP status usage
 
 JWT-based session handling
+
+---
+
+## 📘 Day 40 – Production-Ready Authentication
+
+### What Was Built
+- User registration with hashed passwords
+- Secure login using JWT
+- MongoDB persistence via Mongoose
+- Role-based authorization (admin vs user)
+- Centralized error handling
+- Clean project structure (routes, models)
+
+### API Endpoints
+| Method | Route | Access |
+|------|------|-------|
+| POST | /auth/register | Public |
+| POST | /auth/login | Public |
+| GET | /public | Public |
+| GET | /dashboard | Authenticated users |
+| GET | /admin | Admin only |
+
+### Security Features
+- Password hashing with bcrypt
+- JWT-based authentication
+- Role-based route protection
+- Proper HTTP status codes (401, 403, 409)
+
+### Testing Summary
+- Invalid credentials rejected
+- Duplicate users blocked
+- Tokens required for protected routes
+- Admin-only routes enforced
+- MongoDB used instead of in-memory data
+
+🧪 TEST 1 — Missing Fields (Validation)
+
+📍 Where: Browser Console
+📍 Why: Test backend validation
+
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email: "" })
+})
+.then(res => res.json())
+.then(data => console.log(data));
+
+
+✅ Expected:
+
+{
+  "success": false,
+  "message": "Email and password are required"
+}
+
+
+✔ Confirms: validation middleware works
+
+🧪 TEST 2 — Wrong Password
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@test.com",
+    password: "wrongpass"
+  })
+})
+.then(res => res.json())
+.then(data => console.log(data));
+
+
+✅ Expected:
+
+{
+  "success": false,
+  "message": "Invalid email or password"
+}
+
+
+✔ Confirms: password hashing + compare works
+
+🧪 TEST 3 — Protected Route WITHOUT Token
+fetch("http://localhost:3000/dashboard")
+.then(res => res.text())
+.then(data => console.log(data));
+
+
+✅ Expected:
+
+Forbidden
+
+
+✔ Confirms: JWT protection is enforced
+
+🧪 TEST 4 — Valid Login (MOST IMPORTANT)
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(data => {
+  console.log(data);
+  localStorage.setItem("token", data.token);
+});
+
+
+✅ Expected:
+
+Token printed in console
+
+Token saved in localStorage
+
+✔ Confirms: login + JWT generation works
+
+🧪 TEST 5 — Dashboard WITH Token
+fetch("http://localhost:3000/dashboard", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("token")
+  }
+})
+.then(res => res.json())
+.then(data => console.log(data));
+
+
+✅ Expected:
+
+{
+  "message": "User dashboard",
+  "user": {
+    "email": "admin@test.com",
+    "role": "admin",
+    "iat": ...,
+    "exp": ...
+  }
+}
+
+
+✔ Confirms: token decoding + middleware works
+
+🧪 TEST 6 — Admin Route (Role Check)
+fetch("http://localhost:3000/admin", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("token")
+  }
+})
+.then(res => res.json())
+.then(data => console.log(data));
+
+
+✅ Expected:
+
+{
+  "message": "Admin dashboard"
+}
+
+
+✔ Confirms: role-based authorization works
+
+🧪 TEST 7 — Register New User
+fetch("http://localhost:3000/auth/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "newuser@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(data => console.log(data));
+
+
+✅ Expected:
+
+{ "message": "User registered successfully" }
+
+🧪 TEST 8 — Duplicate Registration
+
+Run the same command again 👆
+
+✅ Expected:
+
+{ "message": "User already exists" }
+
+
+✔ Confirms: unique email constraint works
+
+🧪 TEST 9 — Non-Admin Access to Admin Route
+
+1️⃣ Login as normal user
+
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "newuser@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(data => {
+  localStorage.setItem("token", data.token);
+});
+
+
+2️⃣ Try admin route
+
+fetch("http://localhost:3000/admin", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("token")
+  }
+})
+.then(res => res.text())
+.then(data => console.log(data));
+
+
+✅ Expected:
+
+Admins only
+
+
+✔ Confirms: role-based restriction works
+
+### Outcome
+This setup mirrors **real-world production authentication systems**
+used in modern web applications.
+
+Note: MongoDB persists data across server restarts. 
+If a user already exists, registration correctly returns 409 Conflict.
+Use a new email to test fresh registrations.
+

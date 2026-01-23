@@ -1,21 +1,16 @@
-// Load env variables
 require("dotenv").config();
 
-// Core imports
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
 
-// App & models
 const User = require("./models/User");
 const authRoutes = require("./routes/auth");
 
 const app = express();
 
-// Middleware
-app.use(cors({ origin: "http://127.0.0.1:5500" }));
+app.use(cors());
 app.use(express.json());
 
 const SECRET = process.env.JWT_SECRET;
@@ -80,6 +75,7 @@ async function createTestUser() {
   const existing = await User.findOne({ email: "admin@test.com" });
   if (existing) return;
 
+  const bcrypt = require("bcrypt");
   const hashedPassword = await bcrypt.hash("1234", 10);
 
   await User.create({
@@ -91,5 +87,13 @@ async function createTestUser() {
   console.log("✅ Test admin user created");
 }
 
-// Start everything
 startServer();
+
+// ---------- ERROR HANDLER ----------
+app.use((err, req, res, next) => {
+  console.error("❌ Error:", err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error"
+  });
+});
