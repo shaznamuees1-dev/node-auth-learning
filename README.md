@@ -939,10 +939,10 @@ fetch("http://localhost:3000/auth/login", {
   "success": false,
   "message": "Too many login attempts. Try again later."
 }
-```
 HTTP Status: 429 Too Many Requests
 ✔ Confirms brute-force protection works
 
+```
 ## 🛡️ Security Summary
 Feature	Status
 Password length enforcement	✅
