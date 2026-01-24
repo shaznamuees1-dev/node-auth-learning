@@ -32,13 +32,12 @@ router.post("/register", async (req, res) => {
 
     res.status(201).json({ message: "User registered successfully" });
 
-  } catch (error) {
-    console.error("Register error:", error);
+  } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ---------------- LOGIN ---------------- */
+/* ---------------- LOGIN (ACCESS + REFRESH TOKEN) ---------------- */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -51,27 +50,53 @@ router.post("/login", async (req, res) => {
 
   const user = await User.findOne({ email });
   if (!user) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid email or password"
-    });
+    return res.status(401).json({ message: "Invalid email or password" });
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid email or password"
-    });
+    return res.status(401).json({ message: "Invalid email or password" });
   }
 
-  const token = jwt.sign(
+  const accessToken = jwt.sign(
     { email: user.email, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: "1h" }
   );
 
-  res.json({ token });
+  const refreshToken = jwt.sign(
+    { email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.json({
+    token: accessToken,
+    refreshToken
+  });
+});
+
+/* ---------------- REFRESH TOKEN ---------------- */
+router.post("/refresh", (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: "Refresh token required" });
+  }
+
+  jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid refresh token" });
+    }
+
+    const newAccessToken = jwt.sign(
+      { email: decoded.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ token: newAccessToken });
+  });
 });
 
 module.exports = router;

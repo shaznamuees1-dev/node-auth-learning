@@ -1,21 +1,19 @@
 require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
-const User = require("./models/User");
 const authRoutes = require("./routes/auth");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: "http://127.0.0.1:5500" }));
 app.use(express.json());
 
 const SECRET = process.env.JWT_SECRET;
 
-// ---------- AUTH MIDDLEWARE ----------
+/* -------- MIDDLEWARE -------- */
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.sendStatus(403);
@@ -36,7 +34,7 @@ function adminOnly(req, res, next) {
   next();
 }
 
-// ---------- ROUTES ----------
+/* -------- ROUTES -------- */
 app.use("/auth", authRoutes);
 
 app.get("/public", (req, res) => {
@@ -44,56 +42,19 @@ app.get("/public", (req, res) => {
 });
 
 app.get("/dashboard", verifyToken, (req, res) => {
-  res.json({
-    message: "User dashboard",
-    user: req.user
-  });
+  res.json({ message: "User dashboard", user: req.user });
 });
 
 app.get("/admin", verifyToken, adminOnly, (req, res) => {
   res.json({ message: "Admin dashboard" });
 });
 
-// ---------- DATABASE ----------
-async function startServer() {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
+/* -------- SERVER -------- */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
     console.log("✅ MongoDB connected");
-
-    await createTestUser();
-
     app.listen(process.env.PORT || 3000, () => {
       console.log("🚀 Server running at http://localhost:3000");
     });
-  } catch (err) {
-    console.error("❌ MongoDB error", err);
-  }
-}
-
-// ---------- TEST USER ----------
-async function createTestUser() {
-  const existing = await User.findOne({ email: "admin@test.com" });
-  if (existing) return;
-
-  const bcrypt = require("bcrypt");
-  const hashedPassword = await bcrypt.hash("1234", 10);
-
-  await User.create({
-    email: "admin@test.com",
-    password: hashedPassword,
-    role: "admin"
-  });
-
-  console.log("✅ Test admin user created");
-}
-
-startServer();
-
-// ---------- ERROR HANDLER ----------
-app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.message);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error"
-  });
-});
+  })
+  .catch(err => console.error("❌ MongoDB error", err));
