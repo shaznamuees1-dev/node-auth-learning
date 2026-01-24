@@ -686,3 +686,122 @@ Production systems store refresh tokens securely using:
 ✔ Implement refresh-token-based authentication  
 ✔ Match real-world production auth flows  
 ✔ Prepare system for logout & token revocation  
+---
+## 📘 Day 42 — Refresh Tokens, Logout & Token Utilities
+
+Day 42 extends authentication to a **production-grade session model**
+by introducing **refresh tokens**, **logout**, and **token utilities**.
+
+---
+
+## 🔐 What Was Implemented
+
+- Access token + refresh token authentication
+- Refresh tokens stored securely in the database
+- Logout functionality (refresh token invalidation)
+- Centralized token generation using utility functions
+- Improved session handling without forcing re-login
+
+---
+
+## 🧠 Key Concepts
+
+| Concept | Purpose |
+|------|--------|
+| Access Token | Short-lived token for API access |
+| Refresh Token | Long-lived token to renew access |
+| Token Rotation | Prevents long-term token abuse |
+| Logout | Revokes refresh token |
+
+---
+
+## 📂 Files Added / Updated
+
+- `models/User.js` → stores refresh token
+- `routes/auth.js` → register, login, refresh, logout
+- `utils/token.js` → token helper functions
+- `index.js` → clean app initialization
+
+---
+
+## 🧪 Testing (Browser Console)
+
+### 1️⃣ Register User
+```js
+fetch("http://localhost:3000/auth/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "day42user@test.com",
+    password: "1234"
+  })
+}).then(res => res.json()).then(console.log);
+
+✅ Expected:
+
+{ "message": "User registered successfully" }
+
+2️⃣ Login (Get Tokens)
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "day42user@test.com",
+    password: "1234"
+  })
+}).then(res => res.json()).then(data => {
+  localStorage.setItem("accessToken", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
+});
+
+
+✅ Expected:
+
+Access token
+
+Refresh token
+
+3️⃣ Access Dashboard
+fetch("http://localhost:3000/dashboard", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("accessToken")
+  }
+}).then(res => res.json()).then(console.log);
+
+4️⃣ Refresh Access Token
+fetch("http://localhost:3000/auth/refresh", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    refreshToken: localStorage.getItem("refreshToken")
+  })
+}).then(res => res.json()).then(data => {
+  localStorage.setItem("accessToken", data.accessToken);
+});
+
+5️⃣ Logout
+fetch("http://localhost:3000/auth/logout", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    refreshToken: localStorage.getItem("refreshToken")
+  })
+}).then(res => res.json()).then(console.log);
+
+✅ Learning Outcome
+
+✔ Real-world session handling
+✔ Secure refresh token strategy
+✔ Logout without server restart
+✔ Clean backend architecture
+✔ Ready for frontend integration
+
+🔐 Production Note
+
+In real systems:
+
+Refresh tokens are stored in HTTP-only cookies
+
+Token rotation & revocation lists are used
+
+Shorter access token expiry is git addenforced

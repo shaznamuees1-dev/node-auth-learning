@@ -1,7 +1,12 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+
+const {
+  generateAccessToken,
+  generateRefreshToken
+} = require("../utils/token");
 
 const router = express.Router();
 
@@ -37,7 +42,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/* ---------------- LOGIN (ACCESS + REFRESH TOKEN) ---------------- */
+/* ---------------- LOGIN ---------------- */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -58,30 +63,26 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid email or password" });
   }
 
-  const accessToken = jwt.sign(
-    { email: user.email, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
-  );
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
 
-  const refreshToken = jwt.sign(
-    { email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+  user.refreshToken = refreshToken;
+  await user.save();
 
-  res.json({
-    token: accessToken,
-    refreshToken
-  });
+  res.json({ accessToken, refreshToken });
 });
 
 /* ---------------- REFRESH TOKEN ---------------- */
-router.post("/refresh", (req, res) => {
+router.post("/refresh", async (req, res) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
     return res.status(401).json({ message: "Refresh token required" });
+  }
+
+  const user = await User.findOne({ refreshToken });
+  if (!user) {
+    return res.status(403).json({ message: "Invalid refresh token" });
   }
 
   jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
@@ -89,14 +90,28 @@ router.post("/refresh", (req, res) => {
       return res.status(403).json({ message: "Invalid refresh token" });
     }
 
-    const newAccessToken = jwt.sign(
-      { email: decoded.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.json({ token: newAccessToken });
+    const newAccessToken = generateAccessToken(user);
+    res.json({ accessToken: newAccessToken });
   });
+});
+
+/* ---------------- LOGOUT ---------------- */
+router.post("/logout", async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token required" });
+  }
+
+  const user = await User.findOne({ refreshToken });
+  if (!user) {
+    return res.status(403).json({ message: "Invalid refresh token" });
+  }
+
+  user.refreshToken = null;
+  await user.save();
+
+  res.json({ message: "Logged out successfully" });
 });
 
 module.exports = router;

@@ -49,12 +49,19 @@ app.get("/admin", verifyToken, adminOnly, (req, res) => {
   res.json({ message: "Admin dashboard" });
 });
 
-/* -------- SERVER -------- */
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
+// ---------- DATABASE + SERVER ----------
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("✅ MongoDB connected");
+
     app.listen(process.env.PORT || 3000, () => {
       console.log("🚀 Server running at http://localhost:3000");
     });
-  })
-  .catch(err => console.error("❌ MongoDB error", err));
+
+  } catch (err) {
+    console.error("❌ Failed to start server:", err.message);
+  }
+}
+
+startServer();
