@@ -1,8 +1,10 @@
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const rateLimit = require("express-rate-limit");
 
 const authRoutes = require("./routes/auth");
 
@@ -13,7 +15,19 @@ app.use(express.json());
 
 const SECRET = process.env.JWT_SECRET;
 
-/* -------- MIDDLEWARE -------- */
+/* ---------- BRUTE FORCE PROTECTION ---------- */
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: {
+    success: false,
+    message: "Too many login attempts. Try again later."
+  }
+});
+
+app.use("/auth/login", loginLimiter);
+
+/* ---------- AUTH MIDDLEWARE ---------- */
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.sendStatus(403);
@@ -34,7 +48,7 @@ function adminOnly(req, res, next) {
   next();
 }
 
-/* -------- ROUTES -------- */
+/* ---------- ROUTES ---------- */
 app.use("/auth", authRoutes);
 
 app.get("/public", (req, res) => {
@@ -49,7 +63,7 @@ app.get("/admin", verifyToken, adminOnly, (req, res) => {
   res.json({ message: "Admin dashboard" });
 });
 
-// ---------- DATABASE + SERVER ----------
+/* ---------- DATABASE + SERVER ---------- */
 async function startServer() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
@@ -58,7 +72,6 @@ async function startServer() {
     app.listen(process.env.PORT || 3000, () => {
       console.log("🚀 Server running at http://localhost:3000");
     });
-
   } catch (err) {
     console.error("❌ Failed to start server:", err.message);
   }

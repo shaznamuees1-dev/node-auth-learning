@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-// Generate short-lived access token
+// Short-lived access token
 function generateAccessToken(user) {
   return jwt.sign(
     {
@@ -12,7 +12,7 @@ function generateAccessToken(user) {
   );
 }
 
-// Generate long-lived refresh token
+// Long-lived refresh token
 function generateRefreshToken(user) {
   return jwt.sign(
     {

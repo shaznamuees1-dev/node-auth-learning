@@ -797,11 +797,164 @@ fetch("http://localhost:3000/auth/logout", {
 ✔ Ready for frontend integration
 
 🔐 Production Note
-
 In real systems:
-
 Refresh tokens are stored in HTTP-only cookies
-
 Token rotation & revocation lists are used
-
 Shorter access token expiry is git addenforced
+ 
+```
+## 📘 Day 43 — Security Hardening (Password Policy & Brute-Force Protection)
+
+Day 43 focuses on strengthening authentication security by adding password rules
+and brute-force protection. These are **mandatory features in real production systems**.
+
+---
+
+## 🔐 Features Implemented
+
+### 1️⃣ Password Strength Enforcement
+- Password must be **at least 8 characters**
+- Prevents weak credentials
+- Applied during user registration
+
+### 2️⃣ Brute-Force Protection (Rate Limiting)
+- Limits login attempts to **5 per 15 minutes**
+- Blocks repeated wrong-password attempts
+- Protects against credential-stuffing attacks
+
+---
+
+## 🧠 Why the Server Sometimes Didn’t Respond
+
+### Root Cause
+Multiple Node.js servers were running at the same time on **port 3000**.
+
+This caused:
+- Requests hitting an **old server**
+- Code changes not reflecting
+- Confusing results in browser console
+
+---
+
+## 🛑 How to Kill Old Servers (IMPORTANT)
+
+### 🔹 Windows (PowerShell)
+
+``` bash 
+netstat -ano | findstr :3000
+```
+You’ll see a PID like:
+
+TCP    127.0.0.1:3000    LISTENING    12345
+
+
+Kill it:
+ ``` bash
+taskkill /PID 12345 /F
+```
+🔹 Quick Kill (All Node Processes)
+``` bash
+     taskkill /IM node.exe /F
+
+```
+Then restart the server:
+``` bash
+node index.js
+```
+### 🧪 Testing the Security Features
+🧪 Test 1 — Weak Password (Registration)
+```js
+fetch("http://localhost:3000/auth/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "weak_" + Date.now() + "@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected:
+
+{
+  "success": false,
+  "message": "Password must be at least 8 characters long"
+}
+
+
+✔ Confirms password policy works
+
+🧪 Test 2 — Strong Password (Registration)
+fetch("http://localhost:3000/auth/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "strong_" + Date.now() + "@test.com",
+    password: "StrongPass123"
+  })
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected:
+
+{
+  "success": true,
+  "message": "User registered successfully"
+}
+
+
+✔ Confirms valid users can register
+
+🧪 Test 3 — Wrong Login Attempt (Repeat 6 Times)
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@test.com",
+    password: "wrongpassword"
+  })
+})
+.then(res => res.json())
+.then(console.log);
+
+
+🔁 Run 5 times → normal error
+
+✅ Expected (first 5 attempts):
+
+{
+  "success": false,
+  "message": "Invalid email or password"
+}
+
+🧪 Test 4 — Brute-Force Lock (6th Attempt)
+
+✅ Expected on 6th attempt:
+
+{
+  "success": false,
+  "message": "Too many login attempts. Try again later."
+}
+```
+HTTP Status: 429 Too Many Requests
+✔ Confirms brute-force protection works
+
+## 🛡️ Security Summary
+Feature	Status
+Password length enforcement	✅
+Duplicate account protection	✅
+Login rate limiting	✅
+Brute-force attack prevention	✅
+Production-style security	✅
+
+### ✅ Learning Outcome
+
+✔ Enforced password policies
+✔ Prevented weak credentials
+✔ Implemented brute-force protection
+✔ Learned to debug server conflicts
+✔ Gained real-world backend security experience
