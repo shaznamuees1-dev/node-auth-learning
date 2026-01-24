@@ -958,3 +958,192 @@ Production-style security	✅
 ✔ Implemented brute-force protection
 ✔ Learned to debug server conflicts
 ✔ Gained real-world backend security experience
+
+# 📘 Day 44 — Secure Logout & Token Revocation (JWT Blacklisting)
+
+Day 44 focuses on implementing **secure logout functionality** using
+**JWT token blacklisting**.
+
+In earlier days, logout was only handled on the frontend.
+This is **not secure**, because a stolen JWT would remain valid
+until it naturally expires.
+
+Today we fix that.
+
+---
+
+## 🔐 What Problem Are We Solving?
+
+### ❌ Problem with Stateless JWTs
+- JWTs are valid until expiry
+- Logging out on frontend does NOT invalidate tokens
+- Stolen tokens remain usable
+
+### ✅ Solution: Token Blacklisting
+- Maintain a blacklist of revoked tokens
+- Reject blacklisted tokens on every protected request
+- Enforce real logout behavior
+
+---
+
+## 🛠 Features Implemented
+
+### 1️⃣ Logout Endpoint
+- `/auth/logout`
+- Accepts JWT from Authorization header
+- Adds token to blacklist
+- Immediately invalidates token
+
+### 2️⃣ Token Blacklist Utility
+- Central blacklist store
+- Supports:
+  - add revoked token
+  - check token validity
+
+### 3️⃣ Middleware Enforcement
+- `verifyToken` checks blacklist
+- Block requests using revoked tokens
+
+---
+
+## 📂 Files Added / Modified
+
+backend/
+├── index.js
+├── routes/
+│ └── auth.js
+├── utils/
+│ ├── token.js
+│ └── tokenBlacklist.js
+
+
+---
+
+## 🧪 Test Cases (Run in Browser Console)
+
+---
+
+### 🧪 Test 1 — Login (Get Token)
+
+```js
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(data => {
+  localStorage.setItem("token", data.accessToken);
+  console.log("TOKEN SAVED");
+});
+
+
+✅ Expected:
+
+Token stored in localStorage
+
+🧪 Test 2 — Access Dashboard (Before Logout)
+fetch("http://localhost:3000/dashboard", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("token")
+  }
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected:
+
+{
+  "message": "User dashboard",
+  "user": {
+    "email": "admin@test.com",
+    "role": "admin"
+  }
+}
+
+🧪 Test 3 — Logout (Blacklist Token)
+fetch("http://localhost:3000/auth/logout", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("token")
+  }
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected:
+
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+
+🧪 Test 4 — Access Dashboard After Logout
+fetch("http://localhost:3000/dashboard", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("token")
+  }
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected:
+
+{
+  "success": false,
+  "message": "Token revoked. Please login again."
+}
+
+
+✔ Confirms token blacklist works
+
+🧠 Why the Server Sometimes Didn’t Respond
+Root Cause
+
+Multiple Node.js servers running on port 3000
+
+Old servers handled requests
+
+New code never executed
+
+🛑 How to Kill Old Servers (IMPORTANT)
+Windows (PowerShell)
+netstat -ano | findstr :3000
+
+
+Example output:
+
+TCP    127.0.0.1:3000    LISTENING    12345
+
+
+Kill it:
+
+taskkill /PID 12345 /F
+
+Kill All Node Servers (Fastest)
+taskkill /IM node.exe /F
+
+
+Restart:
+
+node index.js
+```
+### 🛡 Security Summary
+Feature	Status
+JWT logout invalidation	✅
+Token blacklist	✅
+Protected route enforcement	✅
+Immediate logout security	✅
+Production-ready pattern	✅
+## ✅ Learning Outcome
+✔ Implemented secure logout
+✔ Understood JWT revocation limits
+✔ Built token blacklisting logic
+✔ Debugged server port conflicts
+✔ Implemented real-world auth security

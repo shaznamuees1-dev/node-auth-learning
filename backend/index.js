@@ -7,17 +7,16 @@ const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 
 const authRoutes = require("./routes/auth");
+const { isTokenBlacklisted } = require("./utils/tokenBlacklist");
 
 const app = express();
 
 app.use(cors({ origin: "http://127.0.0.1:5500" }));
 app.use(express.json());
 
-const SECRET = process.env.JWT_SECRET;
-
 /* ---------- BRUTE FORCE PROTECTION ---------- */
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5,
   message: {
     success: false,
@@ -34,16 +33,28 @@ function verifyToken(req, res, next) {
 
   const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, SECRET, (err, decoded) => {
+  if (isTokenBlacklisted(token)) {
+    return res.status(401).json({
+      success: false,
+      message: "Token revoked. Please login again."
+    });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) return res.sendStatus(403);
     req.user = decoded;
+    req.token = token;
     next();
   });
 }
 
+/* ✅ THIS WAS MISSING */
 function adminOnly(req, res, next) {
   if (req.user.role !== "admin") {
-    return res.status(403).json({ message: "Admins only" });
+    return res.status(403).json({
+      success: false,
+      message: "Admins only"
+    });
   }
   next();
 }

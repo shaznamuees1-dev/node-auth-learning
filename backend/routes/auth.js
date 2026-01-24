@@ -1,6 +1,5 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const {
@@ -8,19 +7,17 @@ const {
   generateRefreshToken
 } = require("../utils/token");
 
+const { blacklistToken } = require("../utils/tokenBlacklist");
+
 console.log("🔥 AUTH ROUTES FILE LOADED 🔥");
 
 const router = express.Router();
 
-/* ================= REGISTER (Day 43) ================= */
+/* ================= REGISTER ================= */
 router.post("/register", async (req, res) => {
   try {
-    // ✅ ALWAYS destructure first
     const { email, password } = req.body;
 
-    console.log("REGISTER HIT:", password, typeof password);
-
-    // Basic validation
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -28,7 +25,6 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Type guard (important for security)
     if (typeof password !== "string") {
       return res.status(400).json({
         success: false,
@@ -36,7 +32,6 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // 🔐 Password policy (Day 43 goal)
     if (password.length < 8) {
       return res.status(400).json({
         success: false,
@@ -44,7 +39,6 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Check duplicate user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({
@@ -53,24 +47,22 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Save user
     await User.create({
       email,
       password: hashedPassword,
       role: "user"
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       success: true,
       message: "User registered successfully"
     });
 
   } catch (err) {
     console.error("REGISTER ERROR 👉", err);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Server error"
     });
@@ -111,6 +103,22 @@ router.post("/login", async (req, res) => {
   await user.save();
 
   res.json({ accessToken, refreshToken });
+});
+
+/* ================= LOGOUT (Day 44) ================= */
+router.post("/logout", (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(400).json({ message: "Token required" });
+  }
+
+  const token = authHeader.split(" ")[1];
+  blacklistToken(token);
+
+  res.json({
+    success: true,
+    message: "Logged out successfully"
+  });
 });
 
 module.exports = router;
