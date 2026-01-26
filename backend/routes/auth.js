@@ -158,7 +158,7 @@ router.post("/logout", async (req, res) => {
   const token = authHeader.split(" ")[1];
   blacklistToken(token);
 
-  // 🔥 Remove refresh token
+  //  Remove refresh token
   await User.updateOne(
     { refreshToken: { $exists: true } },
     { $set: { refreshToken: null } }
