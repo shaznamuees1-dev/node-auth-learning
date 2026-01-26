@@ -681,11 +681,10 @@ Production systems store refresh tokens securely using:
 ---
 
 ## ✅ Learning Outcome
-
-✔ Understand secure session management  
-✔ Implement refresh-token-based authentication  
-✔ Match real-world production auth flows  
-✔ Prepare system for logout & token revocation  
+- Understand secure session management  
+- Implement refresh-token-based authentication  
+- Match real-world production auth flows  
+- Prepare system for logout & token revocation  
 ---
 ## 📘 Day 42 — Refresh Tokens, Logout & Token Utilities
 
@@ -1147,3 +1146,139 @@ Production-ready pattern	✅
 ✔ Built token blacklisting logic
 ✔ Debugged server port conflicts
 ✔ Implemented real-world auth security
+
+#  # 📘 Day 45 — Refresh Token Rotation (Advanced Session Security)
+
+Day 45 focuses on implementing **Refresh Token Rotation**, a critical
+security mechanism used in real-world production authentication systems.
+
+Instead of reusing the same refresh token, the backend **invalidates the old
+refresh token and issues a new one on every refresh request**.
+
+---
+
+## 🔐 Why Refresh Token Rotation Matters
+
+Without rotation:
+- Stolen refresh tokens can be reused indefinitely
+- Logout cannot fully invalidate sessions
+
+With rotation:
+- Old refresh tokens are immediately invalid
+- Token theft becomes useless
+- Sessions are properly secured
+
+---
+
+## 🛠 Features Implemented
+
+- Refresh tokens stored in database
+- Refresh token verification against DB
+- Refresh token rotation on every refresh
+- Old refresh tokens invalidated
+- Protection against stolen refresh tokens
+
+---
+
+## 🔁 Authentication Flow
+
+### 1️⃣ Login
+- User logs in with email & password
+- Server issues:
+  - Access token (short-lived)
+  - Refresh token (stored in database)
+
+### 2️⃣ Refresh Token
+- Client sends refresh token
+- Server:
+  - Verifies token exists in DB
+  - Generates new access token
+  - Generates new refresh token
+  - Replaces old refresh token in DB
+
+### 3️⃣ Token Theft Attempt
+- Old refresh token is rejected
+- Session remains secure
+
+---
+
+## 🧪 Test Cases
+
+### 🧪 Test 1 — Login (Generate Tokens)
+
+```js
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(data => {
+  console.log(data);
+  localStorage.setItem("accessToken", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
+});
+✅ Expected:
+
+{
+  "accessToken": "...",
+  "refreshToken": "..."
+}
+🧪 Test 2 — Refresh Token Rotation (Valid Token)
+fetch("http://localhost:3000/auth/refresh", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    refreshToken: localStorage.getItem("refreshToken")
+  })
+})
+.then(res => res.json())
+.then(data => {
+  console.log(data);
+  localStorage.setItem("accessToken", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
+});
+✅ Expected:
+
+{
+  "accessToken": "...",
+  "refreshToken": "..."
+}
+✔ Old refresh token is invalidated
+✔ New refresh token is issued
+
+🧪 Test 3 — Old / Stolen Refresh Token (Must Fail)
+fetch("http://localhost:3000/auth/refresh", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    refreshToken: "OLD_REFRESH_TOKEN"
+  })
+})
+.then(res => res.json())
+.then(console.log);
+✅ Expected:
+
+{
+  "success": false,
+  "message": "Invalid refresh token"
+}
+🛡 Security Summary
+Feature	Status
+Refresh token rotation	✅
+Token theft protection	✅
+DB-backed sessions	✅
+Secure logout readiness	✅
+Production-grade auth	✅
+
+✅ Learning Outcome
+Implemented refresh token rotation
+Learned server-side session handling
+Prevented stolen token reuse
+Built enterprise-level authentication logic
+---
+
+

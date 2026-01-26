@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const {
@@ -99,14 +100,56 @@ router.post("/login", async (req, res) => {
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
 
+  // ✅ STORE refresh token (CRITICAL for Day 45)
   user.refreshToken = refreshToken;
   await user.save();
 
   res.json({ accessToken, refreshToken });
 });
 
-/* ================= LOGOUT (Day 44) ================= */
-router.post("/logout", (req, res) => {
+/* ================= REFRESH (ROTATION) ================= */
+router.post("/refresh", async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: "Refresh token required"
+    });
+  }
+
+  const user = await User.findOne({ refreshToken });
+  if (!user) {
+    return res.status(403).json({
+      success: false,
+      message: "Invalid refresh token"
+    });
+  }
+
+  jwt.verify(refreshToken, process.env.JWT_SECRET, async (err) => {
+    if (err) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid refresh token"
+      });
+    }
+
+    // 🔄 ROTATION
+    const newAccessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    res.json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken
+    });
+  });
+});
+
+/* ================= LOGOUT (Day 45) ================= */
+router.post("/logout", async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(400).json({ message: "Token required" });
@@ -114,6 +157,12 @@ router.post("/logout", (req, res) => {
 
   const token = authHeader.split(" ")[1];
   blacklistToken(token);
+
+  // 🔥 Remove refresh token
+  await User.updateOne(
+    { refreshToken: { $exists: true } },
+    { $set: { refreshToken: null } }
+  );
 
   res.json({
     success: true,
