@@ -1149,8 +1149,7 @@ Production-ready pattern	✅
 
 #  # 📘 Day 45 — Refresh Token Rotation (Advanced Session Security)
 
-Day 45 focuses on implementing **Refresh Token Rotation**, a critical
-security mechanism used in real-world production authentication systems.
+Day 45 focuses on implementing **Refresh Token Rotation**, a critical security mechanism used in real-world production authentication systems.
 
 Instead of reusing the same refresh token, the backend **invalidates the old
 refresh token and issues a new one on every refresh request**.
