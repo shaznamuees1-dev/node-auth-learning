@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const rateLimit = require("express-rate-limit");
 
 const authRoutes = require("./routes/auth");
+const User = require("./models/User");
 const { isTokenBlacklisted } = require("./utils/tokenBlacklist");
 
 const app = express();
@@ -27,7 +28,7 @@ const loginLimiter = rateLimit({
 app.use("/auth/login", loginLimiter);
 
 /* ---------- AUTH MIDDLEWARE ---------- */
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.sendStatus(403);
 
@@ -40,15 +41,31 @@ function verifyToken(req, res, next) {
     });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
     if (err) return res.sendStatus(403);
-    req.user = decoded;
+
+    const user = await User.findOne({ email: decoded.email });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User no longer exists"
+      });
+    }
+
+    // ✅ DAY 46 CORE CHECK
+    if (decoded.tokenVersion !== user.tokenVersion) {
+      return res.status(401).json({
+        success: false,
+        message: "Session expired. Please login again."
+      });
+    }
+
+    req.user = user;
     req.token = token;
     next();
   });
 }
 
-/* ✅ THIS WAS MISSING */
 function adminOnly(req, res, next) {
   if (req.user.role !== "admin") {
     return res.status(403).json({

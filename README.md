@@ -1280,4 +1280,214 @@ Prevented stolen token reuse
 Built enterprise-level authentication logic
 ---
 
+# 📘 Day 46 — Global Session Invalidation (Logout From All Devices)
+
+Day 46 focuses on **advanced session security** by implementing
+**global logout** using a **token versioning strategy**.
+
+This is a real-world, production-grade authentication pattern used by
+banking apps, SaaS platforms, and enterprise systems.
+
+---
+
+## 🔐 Problem This Solves
+
+Without global session invalidation:
+- Users stay logged in on stolen devices
+- Old tokens remain valid indefinitely
+- Logging out from one device does not affect others
+
+**Goal of Day 46:**
+👉 Allow a user to log out from **ALL devices at once**
+
+---
+
+## 🧠 Core Concept — Token Versioning
+
+Each user has a `tokenVersion` stored in the database.
+
+### How It Works
+- Every access token includes `tokenVersion`
+- Backend compares token version vs database version
+- If versions mismatch → token is rejected
+
+---
+
+## 🔑 Why This Is Secure (IMPORTANT)
+
+On **logout-all**, the backend executes:
+
+```js
+user.tokenVersion += 1;
+`
+### Result:
+
+Old tokens ≠ new version
+Backend rejects them automatically
+No blacklist needed for global logout
+Stolen tokens become useless
+✅Industry-grade session control
+
+# 🧩 Files Updated (Day 46)
+
+models/User.js
+
+routes/auth.js
+
+index.js
+
+utils/token.js
+
+# 🧪 Testing Guide (ALL REQUIRED TESTS)
+⚙️ Test Setup — Simulating Multiple Devices
+
+Use two browsers:
+
+Device A → Chrome (normal window)
+
+Device B → Incognito / Firefox / Edge
+
+Each browser has separate localStorage, simulating real devices.
+
+🧪 Test 1 — Login from Two Devices
+Device A
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(data => {
+  localStorage.setItem("accessToken", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
+  console.log("Device A logged in");
+});
+
+Device B
+fetch("http://localhost:3000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "admin@test.com",
+    password: "1234"
+  })
+})
+.then(res => res.json())
+.then(data => {
+  localStorage.setItem("accessToken", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
+  console.log("Device B logged in");
+});
+✅ Confirms multiple active sessions exist
+
+🧪 Test 2 — Verify Both Sessions Work
+
+Run on both devices:
+
+fetch("http://localhost:3000/dashboard", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("accessToken")
+  }
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected:
+
+{
+  "message": "User dashboard",
+  "user": { ... }
+}
+✔ Confirms sessions are valid
+
+🧪 Test 3 — Logout From ALL Devices (Core Feature)
+
+Trigger from Device A:
+
+fetch("http://localhost:3000/auth/logout-all", {
+  method: "POST",
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("accessToken")
+  }
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected:
+
+{
+  "success": true,
+  "message": "All sessions logged out"
+}
+
+🧪 Test 4 — Check Device A After Logout-All
+fetch("http://localhost:3000/dashboard", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("accessToken")
+  }
+})
+.then(res => res.json())
+.then(console.log);
+
+✅ Expected:
+
+{
+  "success": false,
+  "message": "Session expired. Please login again."
+}
+
+🧪 Test 5 — Check Device B (CRITICAL TEST)
+
+Run on Device B:
+
+fetch("http://localhost:3000/dashboard", {
+  headers: {
+    Authorization: "Bearer " + localStorage.getItem("accessToken")
+  }
+})
+.then(res => res.json())
+.then(console.log);
+
+
+✅ Expected same failure:
+
+{
+  "success": false,
+  "message": "Session expired. Please login again."
+}
+✔ Confirms ALL sessions were invalidated
+
+### 🛡️ Security Guarantees Achieved
+Feature	                  
+Multiple session support	✅
+Logout single device	✅
+Logout all devices	✅
+Token theft protection	✅
+Session hijack prevention	✅
+Production-grade auth	✅
+
+### 🚨 Common Debug Issue (Important Note)
+Why server responses sometimes looked incorrect
+Cause:
+Multiple Node.js servers running on port 3000
+Old server handling requests
+
+Fix (Windows)
+taskkill /IM node.exe /F
+node index.js
+
+Always restart server after auth changes.
+
+✅ Learning Outcome
+
+✔ Learned global session invalidation
+✔ Implemented token versioning
+✔ Prevented stolen-token abuse
+✔ Built real-world auth security
+✔ Reached senior backend auth level
 

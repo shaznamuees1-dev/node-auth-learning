@@ -18,8 +18,15 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user"
     },
+
     refreshToken: {
       type: String
+    },
+
+    // ✅ DAY 46 — SESSION INVALIDATION
+    tokenVersion: { //enables session invalidation
+      type: Number,
+      default: 0
     }
   },
   { timestamps: true }

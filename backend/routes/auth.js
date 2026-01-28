@@ -10,8 +10,6 @@ const {
 
 const { blacklistToken } = require("../utils/tokenBlacklist");
 
-console.log("🔥 AUTH ROUTES FILE LOADED 🔥");
-
 const router = express.Router();
 
 /* ================= REGISTER ================= */
@@ -26,14 +24,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    if (typeof password !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be a string"
-      });
-    }
-
-    if (password.length < 8) {
+    if (typeof password !== "string" || password.length < 8) {
       return res.status(400).json({
         success: false,
         message: "Password must be at least 8 characters long"
@@ -62,7 +53,6 @@ router.post("/register", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("REGISTER ERROR 👉", err);
     res.status(500).json({
       success: false,
       message: "Server error"
@@ -74,23 +64,8 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Email and password are required"
-    });
-  }
-
   const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid email or password"
-    });
-  }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({
       success: false,
       message: "Invalid email or password"
@@ -100,23 +75,15 @@ router.post("/login", async (req, res) => {
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
 
-  // ✅ STORE refresh token (CRITICAL for Day 45)
   user.refreshToken = refreshToken;
   await user.save();
 
   res.json({ accessToken, refreshToken });
 });
 
-/* ================= REFRESH (ROTATION) ================= */
+/* ================= REFRESH ================= */
 router.post("/refresh", async (req, res) => {
   const { refreshToken } = req.body;
-
-  if (!refreshToken) {
-    return res.status(401).json({
-      success: false,
-      message: "Refresh token required"
-    });
-  }
 
   const user = await User.findOne({ refreshToken });
   if (!user) {
@@ -126,7 +93,7 @@ router.post("/refresh", async (req, res) => {
     });
   }
 
-  jwt.verify(refreshToken, process.env.JWT_SECRET, async (err) => {
+  jwt.verify(refreshToken, process.env.JWT_SECRET, async err => {
     if (err) {
       return res.status(403).json({
         success: false,
@@ -134,7 +101,6 @@ router.post("/refresh", async (req, res) => {
       });
     }
 
-    // 🔄 ROTATION
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
 
@@ -148,19 +114,19 @@ router.post("/refresh", async (req, res) => {
   });
 });
 
-/* ================= LOGOUT (Day 45) ================= */
+/* ================= LOGOUT ================= */
 router.post("/logout", async (req, res) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
+  const token = authHeader?.split(" ")[1];
+
+  if (!token) {
     return res.status(400).json({ message: "Token required" });
   }
 
-  const token = authHeader.split(" ")[1];
   blacklistToken(token);
 
-  //  Remove refresh token
   await User.updateOne(
-    { refreshToken: { $exists: true } },
+    { refreshToken: { $ne: null } },
     { $set: { refreshToken: null } }
   );
 
@@ -170,4 +136,26 @@ router.post("/logout", async (req, res) => {
   });
 });
 
+/* ================= LOGOUT ALL (DAY 46) ================= */
+router.post("/logout-all", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+    if (err) return res.sendStatus(403);
+
+    const user = await User.findOne({ email: decoded.email });
+    if (!user) return res.sendStatus(404);
+
+    user.tokenVersion += 1;
+    user.refreshToken = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "All sessions logged out" 
+    });  ////One request → kills ALL sessions everywhere.
+  });
+});
+
 module.exports = router;
+
